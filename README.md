@@ -3,6 +3,8 @@
 Open `index.html` in a browser and drop an image onto the canvas.
 
 Root motion preview starts at `root-motion.html`.
+If an imported Animation v1 JSON cannot load `imageUrl`, use `Import Image`
+in RootMotionTool to connect the matching local sprite sheet for preview.
 
 Main tools:
 

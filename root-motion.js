@@ -3,6 +3,8 @@ const els = {
   emptyState: document.getElementById("emptyState"),
   motionMeta: document.getElementById("motionMeta"),
   animationInput: document.getElementById("animationInput"),
+  imageInput: document.getElementById("imageInput"),
+  imageHint: document.getElementById("imageHint"),
   animationId: document.getElementById("animationIdStat"),
   imageUrl: document.getElementById("imageUrlStat"),
   frameCount: document.getElementById("frameCountStat"),
@@ -18,6 +20,7 @@ const ctx = els.canvas.getContext("2d");
 let animationData = null;
 let spriteImage = null;
 let currentFrame = 0;
+let manualImageUrl = "";
 
 function readFileAsText(file) {
   return new Promise((resolve, reject) => {
@@ -34,6 +37,23 @@ function loadImage(url) {
     image.onload = () => resolve(image);
     image.onerror = () => reject(new Error(`Could not load image: ${url}`));
     image.src = url;
+  });
+}
+
+function loadImageFile(file) {
+  return new Promise((resolve, reject) => {
+    if (!file || !file.type.startsWith("image/")) {
+      reject(new Error("Please select a sprite sheet image."));
+      return;
+    }
+    const objectUrl = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => resolve({ image, objectUrl });
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error(`Could not load selected image: ${file.name}`));
+    };
+    image.src = objectUrl;
   });
 }
 
@@ -146,7 +166,7 @@ function updateStats() {
   const frameCount = animationData ? getFrameCount(animationData) : 1;
   const sheet = animationData?.sheet || {};
   els.animationId.textContent = animationData?.animationId || "-";
-  els.imageUrl.textContent = animationData?.imageUrl || "-";
+  els.imageUrl.textContent = manualImageUrl || animationData?.imageUrl || "-";
   els.frameCount.textContent = animationData ? String(frameCount) : "-";
   els.frameSize.textContent = animationData ? `${sheet.frameWidth || "-"} x ${sheet.frameHeight || "-"}` : "-";
   els.frameSlider.max = String(Math.max(0, frameCount - 1));
@@ -169,20 +189,53 @@ async function importAnimation(file) {
   const raw = await readFileAsText(file);
   const data = JSON.parse(raw);
   if (data.schema !== "anip.animation.v1") {
-    throw new Error("Unsupported animation schema.");
+    throw new Error("Unsupported animation schema. Expected anip.animation.v1.");
   }
 
   animationData = data;
+  spriteImage = null;
+  manualImageUrl = "";
   currentFrame = 0;
   els.motionMeta.textContent = `${data.displayName || data.animationId} loaded`;
   updateStats();
-  spriteImage = await loadImage(resolveImageUrl(data.imageUrl));
+  drawStage();
+
+  try {
+    spriteImage = await loadImage(resolveImageUrl(data.imageUrl));
+    els.motionMeta.textContent = `${data.displayName || data.animationId} loaded`;
+    els.imageHint.textContent = "Sprite sheet loaded from imageUrl.";
+  } catch (error) {
+    console.warn(error);
+    els.motionMeta.textContent = error.message;
+    els.imageHint.textContent = "imageUrl could not be loaded. Import the matching sprite sheet image manually.";
+  }
+
+  updateStats();
   drawStage();
 }
 
 els.animationInput.addEventListener("change", async (event) => {
   try {
     await importAnimation(event.target.files[0]);
+  } catch (error) {
+    console.error(error);
+    els.motionMeta.textContent = error.message;
+  } finally {
+    event.target.value = "";
+  }
+});
+
+els.imageInput.addEventListener("change", async (event) => {
+  try {
+    if (!animationData) throw new Error("Import animation JSON before connecting an image.");
+    const { image, objectUrl } = await loadImageFile(event.target.files[0]);
+    if (manualImageUrl) URL.revokeObjectURL(manualImageUrl);
+    spriteImage = image;
+    manualImageUrl = objectUrl;
+    els.motionMeta.textContent = `${event.target.files[0].name} connected manually`;
+    els.imageHint.textContent = "Manual image is used for this preview. The animation JSON imageUrl is unchanged.";
+    updateStats();
+    drawStage();
   } catch (error) {
     console.error(error);
     els.motionMeta.textContent = error.message;

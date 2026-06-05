@@ -30,11 +30,18 @@
         <section class="panel-section">
           <div class="section-title">
             <h2>Animation</h2>
-            <label class="tool-button import-button">
-              <input id="animationInput" type="file" accept="application/json,.json">
-              Import JSON
-            </label>
+            <div class="button-row">
+              <label class="tool-button import-button">
+                <input id="animationInput" type="file" accept="application/json,.json">
+                Import JSON
+              </label>
+              <label class="tool-button import-button">
+                <input id="imageInput" type="file" accept="image/*">
+                Import Image
+              </label>
+            </div>
           </div>
+          <p id="imageHint" class="hint-line">If imageUrl cannot be loaded, import the matching sprite sheet image manually.</p>
           <dl class="detail-list">
             <div><dt>ID</dt><dd id="animationIdStat">-</dd></div>
             <div><dt>Image</dt><dd id="imageUrlStat">-</dd></div>
