@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Root Motion Tool</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app-shell root-motion-shell">
+      <section class="workspace">
+        <div class="canvas-header">
+          <div>
+            <h1>Root Motion Tool</h1>
+            <p id="motionMeta">Import animation JSON to preview frame 0</p>
+          </div>
+          <a class="tool-button" href="index.html">SpriteSheetTool</a>
+        </div>
+
+        <div class="drop-zone root-stage">
+          <canvas id="rootCanvas" width="960" height="640"></canvas>
+          <div id="emptyState" class="empty-state">
+            <strong>Import animation JSON</strong>
+            <span>RootMotionTool will load its sprite sheet and draw the first frame.</span>
+          </div>
+        </div>
+      </section>
+
+      <aside class="side-panel">
+        <section class="panel-section">
+          <div class="section-title">
+            <h2>Animation</h2>
+            <label class="tool-button import-button">
+              <input id="animationInput" type="file" accept="application/json,.json">
+              Import JSON
+            </label>
+          </div>
+          <dl class="detail-list">
+            <div><dt>ID</dt><dd id="animationIdStat">-</dd></div>
+            <div><dt>Image</dt><dd id="imageUrlStat">-</dd></div>
+            <div><dt>Frames</dt><dd id="frameCountStat">-</dd></div>
+            <div><dt>Frame Size</dt><dd id="frameSizeStat">-</dd></div>
+          </dl>
+        </section>
+
+        <section class="panel-section">
+          <h2>Current Frame</h2>
+          <div class="timeline">
+            <input id="frameSlider" type="range" min="0" max="0" value="0">
+            <span id="frameLabel">0 / 0</span>
+          </div>
+          <div class="control-grid">
+            <label>Root X<input id="rootXInput" type="number" value="0" disabled></label>
+            <label>Root Y<input id="rootYInput" type="number" value="0" disabled></label>
+          </div>
+        </section>
+
+        <section class="panel-section">
+          <h2>Step 2 Scope</h2>
+          <p class="hint-line">This page only imports Animation Data and renders the selected source frame. Root editing starts in step 3.</p>
+        </section>
+      </aside>
+    </main>
+
+    <script src="root-motion.js"></script>
+  </body>
+</html>

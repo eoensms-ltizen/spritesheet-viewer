@@ -134,11 +134,21 @@ h2 {
   cursor: crosshair;
 }
 
+.root-motion-shell .drop-zone {
+  min-height: 560px;
+}
+
 #sheetCanvas {
   display: block;
   width: 100%;
   height: 100%;
   cursor: default;
+}
+
+#rootCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .empty-state {
@@ -177,6 +187,34 @@ h2 {
 
 .panel-section:last-child {
   border-bottom: 0;
+}
+
+.detail-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.detail-list div {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 10px;
+  align-items: baseline;
+}
+
+.detail-list dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.detail-list dd {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .section-title,

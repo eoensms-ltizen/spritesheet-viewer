@@ -2,7 +2,7 @@
   "schema": "anip.animation.v1",
   "animationId": "sample_knight_walk",
   "displayName": "Sample Knight Walk",
-  "imageUrl": "assets/characters/sample_knight_walk.png",
+  "imageUrl": "samples/sample-knight-walk.svg",
   "sourceTool": {
     "name": "SpriteSheetTool",
     "version": 1

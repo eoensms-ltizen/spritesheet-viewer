@@ -2,6 +2,8 @@
 
 Open `index.html` in a browser and drop an image onto the canvas.
 
+Root motion preview starts at `root-motion.html`.
+
 Main tools:
 
 - Grid slicing with columns, rows, frame size, offset, and spacing.
