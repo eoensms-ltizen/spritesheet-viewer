@@ -587,9 +587,16 @@ function syncRangeInputs() {
 function render() {
   syncRangeInputs();
   ensureFrameState();
+  syncAnchorInputs();
   anchorTarget = computeAnchorTarget();
   drawSheet();
   drawPreview();
+}
+
+function syncAnchorInputs() {
+  const manual = els.anchorMode.value === "manual";
+  els.manualAnchorX.disabled = !manual;
+  els.manualAnchorY.disabled = !manual;
 }
 
 function loadFile(file) {
@@ -1009,6 +1016,10 @@ function buildAnimationV1() {
   const endFrame = Math.max(settings.startFrame, settings.endFrame);
   const frameCount = endFrame - startFrame + 1;
   const animationId = getAnimationId();
+  const resolvedAnchor = computeAnchorTarget() || {
+    x: settings.frameWidth / 2,
+    y: settings.frameHeight,
+  };
   const frames = Array.from({ length: frameCount }, (_, index) => {
     const frame = startFrame + index;
     const nudge = getNudge(frame);
@@ -1047,8 +1058,9 @@ function buildAnimationV1() {
     },
     anchor: {
       mode: els.anchorMode.value,
-      x: settings.manualAnchorX,
-      y: settings.manualAnchorY,
+      x: Number(resolvedAnchor.x.toFixed(3)),
+      y: Number(resolvedAnchor.y.toFixed(3)),
+      resolved: true,
     },
     frames,
     chromaKey: {

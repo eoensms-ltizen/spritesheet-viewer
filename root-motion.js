@@ -99,6 +99,31 @@ function getFrameVisualOffset(sourceFrame) {
   };
 }
 
+function getAnchorPoint(rect) {
+  const anchor = animationData.anchor || {};
+  const mode = anchor.mode || "bottom-center";
+  const hasResolvedPoint = Number.isFinite(Number(anchor.x)) && Number.isFinite(Number(anchor.y));
+
+  if (hasResolvedPoint && (mode === "manual" || anchor.resolved)) {
+    return {
+      x: Number(anchor.x),
+      y: Number(anchor.y),
+    };
+  }
+
+  if (mode === "cell" || mode === "center") {
+    return {
+      x: rect.width / 2,
+      y: rect.height / 2,
+    };
+  }
+
+  return {
+    x: rect.width / 2,
+    y: rect.height,
+  };
+}
+
 function resizeCanvasToDisplaySize() {
   const rect = els.canvas.getBoundingClientRect();
   const ratio = window.devicePixelRatio || 1;
@@ -144,9 +169,9 @@ function drawStage() {
   const scale = Math.min((width * 0.42) / rect.width, (height * 0.58) / rect.height, 4);
   const drawWidth = rect.width * scale;
   const drawHeight = rect.height * scale;
-  const anchor = animationData.anchor || {};
-  const anchorX = Number(anchor.x ?? rect.width / 2) * scale;
-  const anchorY = Number(anchor.y ?? rect.height) * scale;
+  const anchor = getAnchorPoint(rect);
+  const anchorX = anchor.x * scale;
+  const anchorY = anchor.y * scale;
   const drawX = originX - anchorX + offset.x * scale;
   const drawY = groundY - anchorY + offset.y * scale;
 

@@ -61,6 +61,11 @@ Frame-local coordinates use image pixel space:
 - `anchor.x/y` is measured inside one source frame.
 - `frames[].offsetX/Y` is visual correction only. It should not move actor world position.
 
+`anchor.resolved` means `anchor.x/y` is the final point calculated by
+SpriteSheetTool for the selected anchor mode. RootMotionTool should trust
+`anchor.x/y` when `anchor.mode` is `manual` or `anchor.resolved` is `true`.
+Older files without `resolved` should derive non-manual anchors from frame size.
+
 ### Playback
 
 `playback.mode` values:

@@ -27,7 +27,8 @@
   "anchor": {
     "mode": "manual",
     "x": 64,
-    "y": 112
+    "y": 112,
+    "resolved": true
   },
   "frames": [
     { "frame": 0, "offsetX": 0, "offsetY": 0 },
