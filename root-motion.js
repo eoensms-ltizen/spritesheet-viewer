@@ -13,6 +13,9 @@ const els = {
   frameLabel: document.getElementById("frameLabel"),
   rootX: document.getElementById("rootXInput"),
   rootY: document.getElementById("rootYInput"),
+  copyPrevious: document.getElementById("copyPreviousButton"),
+  linearFill: document.getElementById("linearFillButton"),
+  exportRootMotion: document.getElementById("exportRootMotionButton"),
 };
 
 const ctx = els.canvas.getContext("2d");
@@ -22,6 +25,8 @@ let spriteImage = null;
 let currentFrame = 0;
 let manualImageUrl = "";
 let rootFrames = [];
+let draggingRoot = false;
+let stageView = { originX: 0, groundY: 0, scale: 1 };
 
 function readFileAsText(file) {
   return new Promise((resolve, reject) => {
@@ -92,6 +97,108 @@ function setCurrentRootFrame(rootX, rootY) {
     rootX: Number(rootX) || 0,
     rootY: Number(rootY) || 0,
   };
+}
+
+function refreshEditor() {
+  updateStats();
+  drawStage();
+}
+
+function copyPreviousRoot() {
+  if (!animationData || currentFrame === 0) return;
+  const previous = rootFrames[currentFrame - 1] || { rootX: 0, rootY: 0 };
+  setCurrentRootFrame(previous.rootX, previous.rootY);
+  refreshEditor();
+}
+
+function linearFillToCurrent() {
+  if (!animationData || currentFrame === 0) return;
+  const target = getCurrentRootFrame();
+  for (let index = 1; index <= currentFrame; index += 1) {
+    const t = index / currentFrame;
+    rootFrames[index] = {
+      frame: getSourceFrameIndex(index),
+      rootX: Number((target.rootX * t).toFixed(3)),
+      rootY: Number((target.rootY * t).toFixed(3)),
+    };
+  }
+  refreshEditor();
+}
+
+function canvasPointFromEvent(event) {
+  const rect = els.canvas.getBoundingClientRect();
+  const scaleX = els.canvas.width / rect.width;
+  const scaleY = els.canvas.height / rect.height;
+  return {
+    x: (event.clientX - rect.left) * scaleX,
+    y: (event.clientY - rect.top) * scaleY,
+  };
+}
+
+function setRootFromCanvasPoint(point) {
+  if (!animationData || currentFrame === 0) return;
+  const rootX = Math.round((point.x - stageView.originX) / stageView.scale);
+  const rootY = Math.round((point.y - stageView.groundY) / stageView.scale);
+  setCurrentRootFrame(rootX, rootY);
+  refreshEditor();
+}
+
+function nudgeCurrentRoot(dx, dy) {
+  if (!animationData || currentFrame === 0) return;
+  const root = getCurrentRootFrame();
+  setCurrentRootFrame(root.rootX + dx, root.rootY + dy);
+  refreshEditor();
+}
+
+function toAssetId(value) {
+  const normalized = String(value || "")
+    .trim()
+    .replace(/\.[^.]+$/, "")
+    .replace(/[^a-zA-Z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .toLowerCase();
+  return normalized || "root_motion";
+}
+
+function buildRootMotionV1() {
+  if (!animationData) throw new Error("Import animation JSON before exporting root motion.");
+  const last = rootFrames[rootFrames.length - 1] || { rootX: 0, rootY: 0 };
+  const rootMotionId = `${toAssetId(animationData.animationId)}_root`;
+  return {
+    schema: "anip.rootMotion.v1",
+    rootMotionId,
+    animationId: animationData.animationId,
+    displayName: `${animationData.displayName || animationData.animationId} Root Motion`,
+    sourceTool: {
+      name: "RootMotionTool",
+      version: 1,
+    },
+    coordinateSystem: "platformer-side-v1",
+    originFrame: 0,
+    loop: {
+      accumulate: true,
+      cycleOffsetX: Number(last.rootX || 0),
+      cycleOffsetY: Number(last.rootY || 0),
+    },
+    frames: rootFrames.map((frame, index) => ({
+      frame: frame.frame,
+      rootX: index === 0 ? 0 : Number(frame.rootX || 0),
+      rootY: index === 0 ? 0 : Number(frame.rootY || 0),
+    })),
+    metadata: {
+      tags: [],
+      notes: "",
+    },
+  };
+}
+
+function downloadJson(data, filename) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const link = document.createElement("a");
+  link.download = filename;
+  link.href = URL.createObjectURL(blob);
+  link.click();
+  URL.revokeObjectURL(link.href);
 }
 
 function getFrameRect(sourceFrame) {
@@ -198,6 +305,7 @@ function drawStage() {
   const root = getCurrentRootFrame();
   const rootX = root.rootX * scale;
   const rootY = root.rootY * scale;
+  stageView = { originX, groundY, scale };
   const drawX = originX + rootX - anchorX + offset.x * scale;
   const drawY = groundY + rootY - anchorY + offset.y * scale;
 
@@ -236,6 +344,9 @@ function updateStats() {
   els.rootY.value = String(root.rootY);
   els.rootX.disabled = !animationData || currentFrame === 0;
   els.rootY.disabled = !animationData || currentFrame === 0;
+  els.copyPrevious.disabled = !animationData || currentFrame === 0;
+  els.linearFill.disabled = !animationData || currentFrame === 0;
+  els.exportRootMotion.disabled = !animationData;
   els.emptyState.style.display = animationData ? "none" : "";
 }
 
@@ -317,6 +428,45 @@ els.rootY.addEventListener("input", () => {
   setCurrentRootFrame(els.rootX.value, els.rootY.value);
   updateStats();
   drawStage();
+});
+els.copyPrevious.addEventListener("click", copyPreviousRoot);
+els.linearFill.addEventListener("click", linearFillToCurrent);
+els.exportRootMotion.addEventListener("click", () => {
+  try {
+    const data = buildRootMotionV1();
+    downloadJson(data, `${data.rootMotionId}.root-motion.json`);
+    els.motionMeta.textContent = `${data.rootMotionId}.root-motion.json exported`;
+  } catch (error) {
+    console.error(error);
+    els.motionMeta.textContent = error.message;
+  }
+});
+els.canvas.addEventListener("pointerdown", (event) => {
+  if (!animationData || currentFrame === 0) return;
+  draggingRoot = true;
+  els.canvas.setPointerCapture?.(event.pointerId);
+  setRootFromCanvasPoint(canvasPointFromEvent(event));
+});
+els.canvas.addEventListener("pointermove", (event) => {
+  if (!draggingRoot) return;
+  setRootFromCanvasPoint(canvasPointFromEvent(event));
+});
+els.canvas.addEventListener("pointerup", () => {
+  draggingRoot = false;
+});
+els.canvas.addEventListener("pointercancel", () => {
+  draggingRoot = false;
+});
+window.addEventListener("keydown", (event) => {
+  if (event.target instanceof HTMLInputElement) return;
+  const step = event.shiftKey ? 10 : 1;
+  const key = event.key.toLowerCase();
+  if (key === "a") nudgeCurrentRoot(-step, 0);
+  else if (key === "d") nudgeCurrentRoot(step, 0);
+  else if (key === "w") nudgeCurrentRoot(0, -step);
+  else if (key === "s") nudgeCurrentRoot(0, step);
+  else return;
+  event.preventDefault();
 });
 window.addEventListener("resize", drawStage);
 
