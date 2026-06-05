@@ -1,0 +1,17 @@
+# Sprite Sheet Tester
+
+Open `index.html` in a browser and drop an image onto the canvas.
+
+Main tools:
+
+- Grid slicing with columns, rows, frame size, offset, and spacing.
+- Frame preview with FPS, zoom, range, loop, ping-pong playback, and onion skin.
+- Anchor alignment with bottom-center, center, manual, and cell-center modes.
+- Per-frame manual nudge with buttons, inputs, or W/A/S/D.
+- Chroma key with color picker, tolerance, edge softness, and sheet eyedropper.
+- Click a frame on the sheet to select it.
+- Use Left/Right arrows for frame stepping and Space for play/pause.
+- Save the currently selected frame as a PNG.
+- Export the aligned playback range as an animated GIF.
+- Export a new aligned PNG sprite sheet with range, output columns, gap, padding, and tight-bounds options.
+- Export/import alignment settings as JSON.

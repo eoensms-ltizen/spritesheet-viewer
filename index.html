@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sprite Sheet Tester</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="workspace">
+        <div class="canvas-header">
+          <div>
+            <h1>Sprite Sheet Tester</h1>
+            <p id="sheetMeta">Drop or open a sprite sheet</p>
+          </div>
+          <label class="file-button">
+            <input id="fileInput" type="file" accept="image/*">
+            Open Image
+          </label>
+        </div>
+
+        <div id="dropZone" class="drop-zone">
+          <canvas id="sheetCanvas" width="960" height="640"></canvas>
+          <div id="emptyState" class="empty-state">
+            <strong>Drop sprite sheet here</strong>
+            <span>Set grid, anchor, chroma key, and playback options.</span>
+          </div>
+        </div>
+      </section>
+
+      <aside class="side-panel">
+        <section class="panel-section">
+          <div class="section-title">
+            <h2>Slice</h2>
+            <button id="fitGridButton" class="tool-button" title="Fit frame size from sheet size">Auto</button>
+          </div>
+          <div class="control-grid">
+            <label>Cols<input id="colsInput" type="number" min="1" value="4"></label>
+            <label>Rows<input id="rowsInput" type="number" min="1" value="3"></label>
+            <label>Frame W<input id="frameWidthInput" type="number" min="1" value="0"></label>
+            <label>Frame H<input id="frameHeightInput" type="number" min="1" value="0"></label>
+            <label>Offset X<input id="offsetXInput" type="number" min="0" value="0"></label>
+            <label>Offset Y<input id="offsetYInput" type="number" min="0" value="0"></label>
+            <label>Gap X<input id="spacingXInput" type="number" min="0" value="0"></label>
+            <label>Gap Y<input id="spacingYInput" type="number" min="0" value="0"></label>
+          </div>
+        </section>
+
+        <section class="panel-section">
+          <div class="section-title">
+            <h2>Playback</h2>
+            <button id="playButton" class="icon-button" title="Play / Pause">&gt;</button>
+          </div>
+          <div class="preview-stage">
+            <canvas id="previewCanvas" width="360" height="360"></canvas>
+          </div>
+          <div class="timeline">
+            <input id="frameSlider" type="range" min="0" max="0" value="0">
+            <span id="frameLabel">0 / 0</span>
+          </div>
+          <div class="control-grid compact">
+            <label>FPS<input id="fpsInput" type="number" min="1" max="60" value="8"></label>
+            <label>Zoom<input id="zoomInput" type="number" min="1" max="12" value="2"></label>
+            <label>Start<input id="startFrameInput" type="number" min="0" value="0"></label>
+            <label>End<input id="endFrameInput" type="number" min="0" value="11"></label>
+          </div>
+        </section>
+
+        <section class="panel-section">
+          <h2>Anchor</h2>
+          <div class="control-grid">
+            <label>Mode
+              <select id="anchorModeInput">
+                <option value="bottom-center">Bottom Center</option>
+                <option value="center">Center</option>
+                <option value="manual">Manual</option>
+                <option value="cell">Cell Center</option>
+              </select>
+            </label>
+            <label>Base
+              <select id="anchorBaseInput">
+                <option value="average">Average</option>
+                <option value="first">First Frame</option>
+              </select>
+            </label>
+            <label>Manual X<input id="manualAnchorXInput" type="number" min="0" value="0"></label>
+            <label>Manual Y<input id="manualAnchorYInput" type="number" min="0" value="0"></label>
+          </div>
+          <button id="analyzeButton" class="tool-button">Analyze Bounds</button>
+        </section>
+
+        <section class="panel-section">
+          <h2>Frame Nudge</h2>
+          <div class="control-grid">
+            <label>Nudge X<input id="nudgeXInput" type="number" value="0"></label>
+            <label>Nudge Y<input id="nudgeYInput" type="number" value="0"></label>
+          </div>
+          <div class="nudge-pad">
+            <button id="nudgeUpButton" class="icon-button" title="Move up">^</button>
+            <button id="nudgeLeftButton" class="icon-button" title="Move left">&lt;</button>
+            <button id="nudgeResetButton" class="tool-button">Reset</button>
+            <button id="nudgeRightButton" class="icon-button" title="Move right">&gt;</button>
+            <button id="nudgeDownButton" class="icon-button" title="Move down">v</button>
+          </div>
+        </section>
+
+        <section class="panel-section">
+          <h2>Chroma Key</h2>
+          <div class="control-grid">
+            <label>Color<input id="chromaColorInput" type="color" value="#000000"></label>
+            <label>Hex<input id="chromaHexInput" type="text" value="#000000" maxlength="7"></label>
+            <label>Tolerance<input id="chromaToleranceInput" type="number" min="0" max="255" value="24"></label>
+            <label>Edge Soft<input id="chromaSoftnessInput" type="number" min="0" max="255" value="8"></label>
+          </div>
+          <div class="toggle-list single">
+            <label><input id="chromaEnabledInput" type="checkbox"> Enable chroma key</label>
+            <label><input id="eyedropperInput" type="checkbox"> Pick color from sheet</label>
+          </div>
+          <div id="eyedropperHint" class="hint-line">Click a pixel on the sheet while picker is active.</div>
+        </section>
+
+        <section class="panel-section">
+          <h2>View</h2>
+          <div class="toggle-list">
+            <label><input id="showGridInput" type="checkbox" checked> Grid</label>
+            <label><input id="showIndexInput" type="checkbox" checked> Index</label>
+            <label><input id="checkerInput" type="checkbox" checked> Checker</label>
+            <label><input id="pingpongInput" type="checkbox"> Ping-pong</label>
+            <label><input id="showGuidesInput" type="checkbox" checked> Guides</label>
+            <label><input id="onionSkinInput" type="checkbox"> Onion skin</label>
+          </div>
+          <div class="button-row">
+            <button id="prevButton" class="tool-button">Prev</button>
+            <button id="nextButton" class="tool-button">Next</button>
+            <button id="downloadButton" class="tool-button">Save PNG</button>
+          </div>
+        </section>
+
+        <section class="panel-section">
+          <h2>Export</h2>
+          <div class="control-grid">
+            <label>Range
+              <select id="sheetRangeInput">
+                <option value="playback">Playback Start/End</option>
+                <option value="all">All Frames</option>
+              </select>
+            </label>
+            <label>Sheet Cols<input id="sheetColsInput" type="number" min="1" value="0"></label>
+            <label>Cell
+              <select id="sheetCellModeInput">
+                <option value="frame">Frame Size</option>
+                <option value="tight">Tight Bounds</option>
+              </select>
+            </label>
+            <label>Align
+              <select id="sheetAlignInput">
+                <option value="bottom-center">Bottom Center</option>
+                <option value="center">Center</option>
+                <option value="top-left">Top Left</option>
+              </select>
+            </label>
+            <label>Gap<input id="sheetGapInput" type="number" min="0" value="0"></label>
+            <label>Padding<input id="sheetPaddingInput" type="number" min="0" value="0"></label>
+          </div>
+          <div class="button-row">
+            <button id="exportGifButton" class="tool-button">Export GIF</button>
+            <button id="exportSheetButton" class="tool-button">Export Sheet</button>
+          </div>
+          <div class="button-row">
+            <button id="exportConfigButton" class="tool-button">Export JSON</button>
+            <label class="tool-button import-button">
+              <input id="importConfigInput" type="file" accept="application/json,.json">
+              Import JSON
+            </label>
+          </div>
+        </section>
+
+        <section class="panel-section stats">
+          <h2>Inspect</h2>
+          <dl>
+            <div><dt>Frames</dt><dd id="totalFramesStat">0</dd></div>
+            <div><dt>Sheet</dt><dd id="sheetSizeStat">-</dd></div>
+            <div><dt>Cell</dt><dd id="cellSizeStat">-</dd></div>
+            <div><dt>Bounds</dt><dd id="boundsStat">-</dd></div>
+            <div><dt>Auto Offset</dt><dd id="autoOffsetStat">0, 0</dd></div>
+          </dl>
+        </section>
+      </aside>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>

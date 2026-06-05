@@ -1,0 +1,5 @@
+dist/
+.deploy/
+*.log
+Thumbs.db
+.DS_Store
