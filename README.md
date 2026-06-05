@@ -15,3 +15,20 @@ Main tools:
 - Export the aligned playback range as an animated GIF.
 - Export a new aligned PNG sprite sheet with range, output columns, gap, padding, and tight-bounds options.
 - Export/import alignment settings as JSON.
+
+## Character Data Pipeline
+
+The project is being split into two tool roles:
+
+- `SpriteSheetTool`: exports visual animation data.
+- `RootMotionTool`: imports animation data and exports per-frame root motion data.
+
+Format drafts:
+
+- `docs/animation-format.md`
+- `docs/root-motion-format.md`
+
+Sample files:
+
+- `samples/sample-animation.json`
+- `samples/sample-root-motion.json`

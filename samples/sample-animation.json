@@ -1,0 +1,52 @@
+{
+  "schema": "anip.animation.v1",
+  "animationId": "sample_knight_walk",
+  "displayName": "Sample Knight Walk",
+  "imageUrl": "assets/characters/sample_knight_walk.png",
+  "sourceTool": {
+    "name": "SpriteSheetTool",
+    "version": 1
+  },
+  "sheet": {
+    "columns": 8,
+    "rows": 1,
+    "frameWidth": 128,
+    "frameHeight": 128,
+    "offsetX": 0,
+    "offsetY": 0,
+    "spacingX": 0,
+    "spacingY": 0
+  },
+  "playback": {
+    "startFrame": 0,
+    "frameCount": 8,
+    "fps": 12,
+    "frameMs": 83.333,
+    "mode": "loop"
+  },
+  "anchor": {
+    "mode": "manual",
+    "x": 64,
+    "y": 112
+  },
+  "frames": [
+    { "frame": 0, "offsetX": 0, "offsetY": 0 },
+    { "frame": 1, "offsetX": 0, "offsetY": 0 },
+    { "frame": 2, "offsetX": 0, "offsetY": 0 },
+    { "frame": 3, "offsetX": 0, "offsetY": 0 },
+    { "frame": 4, "offsetX": 0, "offsetY": 0 },
+    { "frame": 5, "offsetX": 0, "offsetY": 0 },
+    { "frame": 6, "offsetX": 0, "offsetY": 0 },
+    { "frame": 7, "offsetX": 0, "offsetY": 0 }
+  ],
+  "chromaKey": {
+    "enabled": false,
+    "color": "#00ff00",
+    "tolerance": 32,
+    "softness": 8
+  },
+  "metadata": {
+    "tags": ["sample", "platformer", "walk"],
+    "notes": "Placeholder animation asset used to validate RootMotionTool import."
+  }
+}

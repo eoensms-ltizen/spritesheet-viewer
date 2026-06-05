@@ -1,0 +1,31 @@
+{
+  "schema": "anip.rootMotion.v1",
+  "rootMotionId": "sample_knight_walk_root",
+  "animationId": "sample_knight_walk",
+  "displayName": "Sample Knight Walk Root Motion",
+  "sourceTool": {
+    "name": "RootMotionTool",
+    "version": 1
+  },
+  "coordinateSystem": "platformer-side-v1",
+  "originFrame": 0,
+  "loop": {
+    "accumulate": true,
+    "cycleOffsetX": 32,
+    "cycleOffsetY": 0
+  },
+  "frames": [
+    { "frame": 0, "rootX": 0, "rootY": 0 },
+    { "frame": 1, "rootX": 4, "rootY": 0 },
+    { "frame": 2, "rootX": 8, "rootY": -1 },
+    { "frame": 3, "rootX": 12, "rootY": 0 },
+    { "frame": 4, "rootX": 16, "rootY": 0 },
+    { "frame": 5, "rootX": 21, "rootY": 0 },
+    { "frame": 6, "rootX": 27, "rootY": -1 },
+    { "frame": 7, "rootX": 32, "rootY": 0 }
+  ],
+  "metadata": {
+    "tags": ["sample", "platformer", "walk"],
+    "notes": "rootX/rootY values are absolute from frame 0, not previous-frame deltas."
+  }
+}
