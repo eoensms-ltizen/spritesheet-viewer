@@ -5,6 +5,9 @@ const els = {
   previewCanvas: document.getElementById("previewCanvas"),
   emptyState: document.getElementById("emptyState"),
   sheetMeta: document.getElementById("sheetMeta"),
+  animationId: document.getElementById("animationIdInput"),
+  displayName: document.getElementById("displayNameInput"),
+  imageUrl: document.getElementById("imageUrlInput"),
   cols: document.getElementById("colsInput"),
   rows: document.getElementById("rowsInput"),
   frameWidth: document.getElementById("frameWidthInput"),
@@ -597,6 +600,9 @@ function loadFile(file) {
     nextImage.onload = () => {
       image = nextImage;
       imageName = file.name;
+      if (!els.imageUrl.value.trim()) els.imageUrl.value = file.name;
+      if (!els.animationId.value.trim()) els.animationId.value = toAssetId(file.name);
+      if (!els.displayName.value.trim()) els.displayName.value = imageName.replace(/\.[^.]+$/, "");
       els.emptyState.hidden = true;
       els.sheetMeta.textContent = `${file.name} - ${image.width} x ${image.height}`;
       fitGridToImage();
@@ -606,6 +612,19 @@ function loadFile(file) {
     nextImage.src = reader.result;
   };
   reader.readAsDataURL(file);
+}
+
+function loadImageFromUrl(url) {
+  return new Promise((resolve, reject) => {
+    if (!url) {
+      reject(new Error("Animation JSON has no imageUrl."));
+      return;
+    }
+    const nextImage = new Image();
+    nextImage.onload = () => resolve(nextImage);
+    nextImage.onerror = () => reject(new Error(`Could not load imageUrl: ${url}`));
+    nextImage.src = new URL(url, document.baseURI).href;
+  });
 }
 
 function fitGridToImage() {
@@ -970,12 +989,47 @@ function adjustNudge(dx, dy) {
   render();
 }
 
-function exportConfig() {
+function toAssetId(value) {
+  const normalized = String(value || "")
+    .trim()
+    .replace(/\.[^.]+$/, "")
+    .replace(/[^a-zA-Z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .toLowerCase();
+  return normalized || "sprite_animation";
+}
+
+function getAnimationId() {
+  return toAssetId(els.animationId.value || imageName || "sprite_animation");
+}
+
+function buildAnimationV1() {
   const settings = readSettings();
-  const config = {
-    version: 1,
-    grid: {
-      cols: settings.cols,
+  const startFrame = Math.min(settings.startFrame, settings.endFrame);
+  const endFrame = Math.max(settings.startFrame, settings.endFrame);
+  const frameCount = endFrame - startFrame + 1;
+  const animationId = getAnimationId();
+  const frames = Array.from({ length: frameCount }, (_, index) => {
+    const frame = startFrame + index;
+    const nudge = getNudge(frame);
+    return {
+      frame,
+      offsetX: nudge.x,
+      offsetY: nudge.y,
+    };
+  });
+
+  return {
+    schema: "anip.animation.v1",
+    animationId,
+    displayName: els.displayName.value.trim() || animationId,
+    imageUrl: els.imageUrl.value.trim() || imageName,
+    sourceTool: {
+      name: "SpriteSheetTool",
+      version: 1,
+    },
+    sheet: {
+      columns: settings.cols,
       rows: settings.rows,
       frameWidth: settings.frameWidth,
       frameHeight: settings.frameHeight,
@@ -985,39 +1039,37 @@ function exportConfig() {
       spacingY: settings.spacingY,
     },
     playback: {
+      startFrame,
+      frameCount,
       fps: settings.fps,
-      zoom: settings.zoom,
-      startFrame: settings.startFrame,
-      endFrame: settings.endFrame,
-      pingpong: els.pingpong.checked,
+      frameMs: Number((1000 / settings.fps).toFixed(3)),
+      mode: els.pingpong.checked ? "pingpong" : "loop",
     },
     anchor: {
       mode: els.anchorMode.value,
-      base: els.anchorBase.value,
-      manualX: settings.manualAnchorX,
-      manualY: settings.manualAnchorY,
+      x: settings.manualAnchorX,
+      y: settings.manualAnchorY,
     },
-    chroma: {
+    frames,
+    chromaKey: {
       enabled: els.chromaEnabled.checked,
       color: els.chromaHex.value,
       tolerance: settings.chromaTolerance,
       softness: settings.chromaSoftness,
     },
-    sheetExport: {
-      range: els.sheetRange.value,
-      cols: settings.sheetCols,
-      cellMode: els.sheetCellMode.value,
-      align: els.sheetAlign.value,
-      gap: settings.sheetGap,
-      padding: settings.sheetPadding,
+    metadata: {
+      tags: [],
+      notes: "",
     },
-    nudges: frameNudges,
   };
+}
 
-  const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json" });
+function exportConfig() {
+  const animation = buildAnimationV1();
+
+  const blob = new Blob([JSON.stringify(animation, null, 2)], { type: "application/json" });
   const link = document.createElement("a");
-  const baseName = imageName.replace(/\.[^.]+$/, "") || "sprite";
-  link.download = `${baseName}_alignment.json`;
+  link.download = `${animation.animationId}.animation.json`;
   link.href = URL.createObjectURL(blob);
   link.click();
   URL.revokeObjectURL(link.href);
@@ -1026,45 +1078,70 @@ function exportConfig() {
 function importConfig(file) {
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = () => {
-    const config = JSON.parse(reader.result);
-    const grid = config.grid || {};
-    const playback = config.playback || {};
-    const anchor = config.anchor || {};
-    const chroma = config.chroma || {};
-    const sheetExport = config.sheetExport || {};
+  reader.onload = async () => {
+    try {
+      const animation = JSON.parse(reader.result);
+      if (animation.schema !== "anip.animation.v1") {
+        throw new Error("Unsupported animation schema. Expected anip.animation.v1.");
+      }
 
-    els.cols.value = grid.cols ?? els.cols.value;
-    els.rows.value = grid.rows ?? els.rows.value;
-    els.frameWidth.value = grid.frameWidth ?? els.frameWidth.value;
-    els.frameHeight.value = grid.frameHeight ?? els.frameHeight.value;
-    els.offsetX.value = grid.offsetX ?? els.offsetX.value;
-    els.offsetY.value = grid.offsetY ?? els.offsetY.value;
-    els.spacingX.value = grid.spacingX ?? els.spacingX.value;
-    els.spacingY.value = grid.spacingY ?? els.spacingY.value;
-    els.fps.value = playback.fps ?? els.fps.value;
-    els.zoom.value = playback.zoom ?? els.zoom.value;
-    els.startFrame.value = playback.startFrame ?? els.startFrame.value;
-    els.endFrame.value = playback.endFrame ?? els.endFrame.value;
-    els.pingpong.checked = Boolean(playback.pingpong);
-    els.anchorMode.value = anchor.mode || els.anchorMode.value;
-    els.anchorBase.value = anchor.base || els.anchorBase.value;
-    els.manualAnchorX.value = anchor.manualX ?? els.manualAnchorX.value;
-    els.manualAnchorY.value = anchor.manualY ?? els.manualAnchorY.value;
-    els.chromaEnabled.checked = Boolean(chroma.enabled);
-    els.chromaColor.value = chroma.color || els.chromaColor.value;
-    els.chromaHex.value = chroma.color || els.chromaHex.value;
-    els.chromaTolerance.value = chroma.tolerance ?? els.chromaTolerance.value;
-    els.chromaSoftness.value = chroma.softness ?? els.chromaSoftness.value;
-    els.sheetRange.value = sheetExport.range || els.sheetRange.value;
-    els.sheetCols.value = sheetExport.cols ?? els.sheetCols.value;
-    els.sheetCellMode.value = sheetExport.cellMode || els.sheetCellMode.value;
-    els.sheetAlign.value = sheetExport.align || els.sheetAlign.value;
-    els.sheetGap.value = sheetExport.gap ?? els.sheetGap.value;
-    els.sheetPadding.value = sheetExport.padding ?? els.sheetPadding.value;
-    frameNudges = Array.isArray(config.nudges) ? config.nudges : [];
-    analyzeAllFrames();
-    render();
+      const sheet = animation.sheet || {};
+      const playback = animation.playback || {};
+      const anchor = animation.anchor || {};
+      const chroma = animation.chromaKey || {};
+      const startFrame = Number(playback.startFrame || 0);
+      const frameCount = Math.max(1, Number(playback.frameCount || animation.frames?.length || 1));
+
+      els.animationId.value = animation.animationId || "";
+      els.displayName.value = animation.displayName || "";
+      els.imageUrl.value = animation.imageUrl || "";
+      els.cols.value = sheet.columns ?? els.cols.value;
+      els.rows.value = sheet.rows ?? els.rows.value;
+      els.frameWidth.value = sheet.frameWidth ?? els.frameWidth.value;
+      els.frameHeight.value = sheet.frameHeight ?? els.frameHeight.value;
+      els.offsetX.value = sheet.offsetX ?? els.offsetX.value;
+      els.offsetY.value = sheet.offsetY ?? els.offsetY.value;
+      els.spacingX.value = sheet.spacingX ?? els.spacingX.value;
+      els.spacingY.value = sheet.spacingY ?? els.spacingY.value;
+      els.fps.value = playback.fps ?? els.fps.value;
+      els.startFrame.value = String(startFrame);
+      els.endFrame.value = String(startFrame + frameCount - 1);
+      els.pingpong.checked = playback.mode === "pingpong";
+      els.anchorMode.value = anchor.mode || els.anchorMode.value;
+      els.manualAnchorX.value = anchor.x ?? els.manualAnchorX.value;
+      els.manualAnchorY.value = anchor.y ?? els.manualAnchorY.value;
+      els.chromaEnabled.checked = Boolean(chroma.enabled);
+      els.chromaColor.value = chroma.color || els.chromaColor.value;
+      els.chromaHex.value = chroma.color || els.chromaHex.value;
+      els.chromaTolerance.value = chroma.tolerance ?? els.chromaTolerance.value;
+      els.chromaSoftness.value = chroma.softness ?? els.chromaSoftness.value;
+      frameNudges = [];
+      if (Array.isArray(animation.frames)) {
+        animation.frames.forEach((frame) => {
+          frameNudges[Number(frame.frame)] = {
+            x: Number(frame.offsetX || 0),
+            y: Number(frame.offsetY || 0),
+          };
+        });
+      }
+      currentFrame = startFrame;
+      if (animation.imageUrl) {
+        try {
+          image = await loadImageFromUrl(animation.imageUrl);
+          imageName = animation.imageUrl.split("/").pop() || animation.imageUrl;
+          els.emptyState.hidden = true;
+          els.sheetMeta.textContent = `${imageName} - ${image.width} x ${image.height}`;
+        } catch (error) {
+          console.warn(error);
+          els.sheetMeta.textContent = error.message;
+        }
+      }
+      analyzeAllFrames();
+      render();
+    } catch (error) {
+      window.alert(error.message);
+      console.error(error);
+    }
   };
   reader.readAsText(file);
 }

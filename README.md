@@ -16,7 +16,7 @@ Main tools:
 - Save the currently selected frame as a PNG.
 - Export the aligned playback range as an animated GIF.
 - Export a new aligned PNG sprite sheet with range, output columns, gap, padding, and tight-bounds options.
-- Export/import alignment settings as JSON.
+- Export/import Animation v1 JSON for RootMotionTool and game projects.
 
 ## Character Data Pipeline
 

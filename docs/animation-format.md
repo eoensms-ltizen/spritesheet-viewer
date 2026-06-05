@@ -91,26 +91,30 @@ should not be required for RootMotionTool step 1.
 
 See `docs/root-motion-format.md`.
 
-## Compatibility With Current Export
+## SpriteSheetTool JSON Export
 
-The current SpriteSheetViewer alignment export maps roughly as follows:
+SpriteSheetTool JSON export/import now uses this Animation Asset format only.
+Older alignment JSON files are not supported by SpriteSheetTool or
+RootMotionTool.
 
-| Current export | Animation asset |
+The tool maps UI fields as follows:
+
+| SpriteSheetTool UI | Animation asset |
 | --- | --- |
-| `grid.cols` | `sheet.columns` |
-| `grid.rows` | `sheet.rows` |
-| `grid.frameWidth` | `sheet.frameWidth` |
-| `grid.frameHeight` | `sheet.frameHeight` |
-| `grid.offsetX` | `sheet.offsetX` |
-| `grid.offsetY` | `sheet.offsetY` |
-| `grid.spacingX` | `sheet.spacingX` |
-| `grid.spacingY` | `sheet.spacingY` |
-| `playback.fps` | `playback.fps` |
-| `playback.startFrame` | `playback.startFrame` |
-| `playback.endFrame` | derive `playback.frameCount` |
-| `playback.pingpong` | `playback.mode` |
-| `anchor.manualX/Y` | `anchor.x/y` |
-| `nudges[]` | `frames[].offsetX/Y` |
-
-The next implementation step can add an Animation Asset export button without
-removing the current alignment export.
+| `Animation ID` | `animationId` |
+| `Display Name` | `displayName` |
+| `Image URL` | `imageUrl` |
+| `Cols` | `sheet.columns` |
+| `Rows` | `sheet.rows` |
+| `Frame W` | `sheet.frameWidth` |
+| `Frame H` | `sheet.frameHeight` |
+| `Offset X` | `sheet.offsetX` |
+| `Offset Y` | `sheet.offsetY` |
+| `Gap X` | `sheet.spacingX` |
+| `Gap Y` | `sheet.spacingY` |
+| `FPS` | `playback.fps` |
+| `Start` | `playback.startFrame` |
+| `End` | derive `playback.frameCount` |
+| `Ping-pong` | `playback.mode` |
+| `Manual X/Y` | `anchor.x/y` |
+| Frame nudge data | `frames[].offsetX/Y` |
