@@ -21,6 +21,7 @@ let animationData = null;
 let spriteImage = null;
 let currentFrame = 0;
 let manualImageUrl = "";
+let rootFrames = [];
 
 function readFileAsText(file) {
   return new Promise((resolve, reject) => {
@@ -69,6 +70,28 @@ function getFrameCount(data) {
 
 function getSourceFrameIndex(localFrame) {
   return Number(animationData.playback?.startFrame || 0) + localFrame;
+}
+
+function initializeRootFrames() {
+  const count = animationData ? getFrameCount(animationData) : 0;
+  rootFrames = Array.from({ length: count }, (_, localFrame) => ({
+    frame: getSourceFrameIndex(localFrame),
+    rootX: 0,
+    rootY: 0,
+  }));
+}
+
+function getCurrentRootFrame() {
+  return rootFrames[currentFrame] || { frame: getSourceFrameIndex(currentFrame), rootX: 0, rootY: 0 };
+}
+
+function setCurrentRootFrame(rootX, rootY) {
+  if (!animationData || currentFrame === 0) return;
+  rootFrames[currentFrame] = {
+    frame: getSourceFrameIndex(currentFrame),
+    rootX: Number(rootX) || 0,
+    rootY: Number(rootY) || 0,
+  };
 }
 
 function getFrameRect(sourceFrame) {
@@ -172,8 +195,11 @@ function drawStage() {
   const anchor = getAnchorPoint(rect);
   const anchorX = anchor.x * scale;
   const anchorY = anchor.y * scale;
-  const drawX = originX - anchorX + offset.x * scale;
-  const drawY = groundY - anchorY + offset.y * scale;
+  const root = getCurrentRootFrame();
+  const rootX = root.rootX * scale;
+  const rootY = root.rootY * scale;
+  const drawX = originX + rootX - anchorX + offset.x * scale;
+  const drawY = groundY + rootY - anchorY + offset.y * scale;
 
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(spriteImage, rect.x, rect.y, rect.width, rect.height, drawX, drawY, drawWidth, drawHeight);
@@ -184,6 +210,14 @@ function drawStage() {
   ctx.lineTo(originX + 9, groundY);
   ctx.moveTo(originX, groundY - 9);
   ctx.lineTo(originX, groundY + 9);
+  ctx.stroke();
+
+  ctx.strokeStyle = "rgba(255, 107, 107, 0.9)";
+  ctx.beginPath();
+  ctx.moveTo(originX + rootX - 7, groundY + rootY);
+  ctx.lineTo(originX + rootX + 7, groundY + rootY);
+  ctx.moveTo(originX + rootX, groundY + rootY - 7);
+  ctx.lineTo(originX + rootX, groundY + rootY + 7);
   ctx.stroke();
 }
 
@@ -197,8 +231,11 @@ function updateStats() {
   els.frameSlider.max = String(Math.max(0, frameCount - 1));
   els.frameSlider.value = String(currentFrame);
   els.frameLabel.textContent = `${currentFrame} / ${Math.max(0, frameCount - 1)}`;
-  els.rootX.value = "0";
-  els.rootY.value = "0";
+  const root = getCurrentRootFrame();
+  els.rootX.value = String(root.rootX);
+  els.rootY.value = String(root.rootY);
+  els.rootX.disabled = !animationData || currentFrame === 0;
+  els.rootY.disabled = !animationData || currentFrame === 0;
   els.emptyState.style.display = animationData ? "none" : "";
 }
 
@@ -221,6 +258,7 @@ async function importAnimation(file) {
   spriteImage = null;
   manualImageUrl = "";
   currentFrame = 0;
+  initializeRootFrames();
   els.motionMeta.textContent = `${data.displayName || data.animationId} loaded`;
   updateStats();
   drawStage();
@@ -270,6 +308,16 @@ els.imageInput.addEventListener("change", async (event) => {
 });
 
 els.frameSlider.addEventListener("input", () => setCurrentFrame(els.frameSlider.value));
+els.rootX.addEventListener("input", () => {
+  setCurrentRootFrame(els.rootX.value, els.rootY.value);
+  updateStats();
+  drawStage();
+});
+els.rootY.addEventListener("input", () => {
+  setCurrentRootFrame(els.rootX.value, els.rootY.value);
+  updateStats();
+  drawStage();
+});
 window.addEventListener("resize", drawStage);
 
 updateStats();
