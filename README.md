@@ -6,7 +6,8 @@ Root motion preview starts at `root-motion.html`.
 If an imported Animation v1 JSON cannot load `imageUrl`, use `Import Image`
 in RootMotionTool to connect the matching local sprite sheet for preview.
 RootMotionTool supports Root X/Y editing, drag editing on the stage, W/A/S/D
-nudge, Shift+W/A/S/D fast nudge, linear fill, and RootMotion v1 export.
+nudge, Shift+W/A/S/D fast nudge, linear fill, root path display, and
+RootMotion v1 import/export.
 
 Main tools:
 

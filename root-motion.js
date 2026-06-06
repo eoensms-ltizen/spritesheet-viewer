@@ -15,6 +15,7 @@ const els = {
   rootY: document.getElementById("rootYInput"),
   copyPrevious: document.getElementById("copyPreviousButton"),
   linearFill: document.getElementById("linearFillButton"),
+  rootMotionInput: document.getElementById("rootMotionInput"),
   exportRootMotion: document.getElementById("exportRootMotionButton"),
 };
 
@@ -192,6 +193,28 @@ function buildRootMotionV1() {
   };
 }
 
+function applyRootMotionV1(data) {
+  if (!animationData) throw new Error("Import animation JSON before importing root motion.");
+  if (data.schema !== "anip.rootMotion.v1") {
+    throw new Error("Unsupported root motion schema. Expected anip.rootMotion.v1.");
+  }
+  if (data.animationId !== animationData.animationId) {
+    throw new Error(`RootMotion animationId mismatch: ${data.animationId} !== ${animationData.animationId}`);
+  }
+
+  initializeRootFrames();
+  const byFrame = new Map((data.frames || []).map((frame) => [Number(frame.frame), frame]));
+  rootFrames = rootFrames.map((frame, index) => {
+    if (index === 0) return { ...frame, rootX: 0, rootY: 0 };
+    const saved = byFrame.get(Number(frame.frame));
+    return {
+      frame: frame.frame,
+      rootX: Number(saved?.rootX || 0),
+      rootY: Number(saved?.rootY || 0),
+    };
+  });
+}
+
 function downloadJson(data, filename) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   const link = document.createElement("a");
@@ -265,6 +288,32 @@ function resizeCanvasToDisplaySize() {
   }
 }
 
+function drawRootPath(originX, groundY, scale) {
+  if (!rootFrames.length) return;
+  ctx.save();
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = "rgba(79, 183, 255, 0.5)";
+  ctx.beginPath();
+  rootFrames.forEach((frame, index) => {
+    const x = originX + frame.rootX * scale;
+    const y = groundY + frame.rootY * scale;
+    if (index === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  rootFrames.forEach((frame, index) => {
+    const x = originX + frame.rootX * scale;
+    const y = groundY + frame.rootY * scale;
+    const isCurrent = index === currentFrame;
+    ctx.fillStyle = isCurrent ? "rgba(255, 107, 107, 0.95)" : "rgba(255, 209, 102, 0.78)";
+    ctx.beginPath();
+    ctx.arc(x, y, isCurrent ? 5 : 3, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.restore();
+}
+
 function drawStage() {
   resizeCanvasToDisplaySize();
   const width = els.canvas.width;
@@ -306,6 +355,7 @@ function drawStage() {
   const rootX = root.rootX * scale;
   const rootY = root.rootY * scale;
   stageView = { originX, groundY, scale };
+  drawRootPath(originX, groundY, scale);
   const drawX = originX + rootX - anchorX + offset.x * scale;
   const drawY = groundY + rootY - anchorY + offset.y * scale;
 
@@ -431,6 +481,21 @@ els.rootY.addEventListener("input", () => {
 });
 els.copyPrevious.addEventListener("click", copyPreviousRoot);
 els.linearFill.addEventListener("click", linearFillToCurrent);
+els.rootMotionInput.addEventListener("change", async (event) => {
+  try {
+    const file = event.target.files[0];
+    if (!file) return;
+    const data = JSON.parse(await readFileAsText(file));
+    applyRootMotionV1(data);
+    els.motionMeta.textContent = `${file.name} imported`;
+    refreshEditor();
+  } catch (error) {
+    console.error(error);
+    els.motionMeta.textContent = error.message;
+  } finally {
+    event.target.value = "";
+  }
+});
 els.exportRootMotion.addEventListener("click", () => {
   try {
     const data = buildRootMotionV1();
